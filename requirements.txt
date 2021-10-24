@@ -1,0 +1,6 @@
+numpy
+scipy
+pandas
+git+ssh://git@github.com/OlleLindgren/data-cache.git
+git+ssh://git@github.com/OlleLindgren/datasystems.git
+git+ssh://git@github.com/OlleLindgren/model-persistence.git
