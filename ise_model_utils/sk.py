@@ -45,10 +45,6 @@ from sklearn.neighbors import KNeighborsRegressor
 # from sklearn.cross_decomposition import PLSRegression
 # from sklearn.svm import LinearSVR
 
-import ise_data_utils as data
-
-LOSS = "MSLE"
-
 def fit_model(
     model: Pipeline,
     X_train: np.array,
