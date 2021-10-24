@@ -1,4 +1,4 @@
-__version__ = 'v0.0.3'
+__version__ = version = 'v0.0.3'
 
 from typing import Tuple
 import numpy as np
