@@ -1,5 +1,10 @@
 __version__ = version = 'v0.0.3'
 
+if __package__:
+    from .settings import LOSS
+else:
+    from settings import LOSS
+
 from typing import Tuple
 import numpy as np
 
