@@ -22,7 +22,7 @@ from sklearn.feature_selection import SelectFromModel
 from sklearn.preprocessing import StandardScaler, Normalizer, QuantileTransformer
 
 # Regression
-from sklearn.linear_model import (ElasticNet, SGDRegressor)
+from sklearn.linear_model import ElasticNet, SGDRegressor
 
 from sklearn.ensemble import (
     RandomForestRegressor,
@@ -33,6 +33,7 @@ from sklearn.ensemble import (
     AdaBoostRegressor,
 )
 from sklearn.neighbors import KNeighborsRegressor
+
 # from sklearn.gaussian_process import GaussianProcessRegressor
 # from sklearn.cross_decomposition import PLSRegression
 # from sklearn.svm import LinearSVR
@@ -50,7 +51,7 @@ else:
 N_PROCESSORS_FIT = max(1, cpu_count() - 1)
 
 # Version of package
-__version__ = version = 'v0.0.3'
+__version__ = version = "v0.0.3"
 
 
 def fit_model(model: Pipeline, X_train: np.array, y_train: np.array) -> dict:
@@ -63,8 +64,7 @@ def fit_model(model: Pipeline, X_train: np.array, y_train: np.array) -> dict:
     model.fit(X_train, y_train)
 
 
-def eval_model(model: Pipeline, dummy: Pipeline, X_test: np.array,
-               y_test: np.array) -> dict:
+def eval_model(model: Pipeline, dummy: Pipeline, X_test: np.array, y_test: np.array) -> dict:
     """Evaluate model
 
     Args:
@@ -99,26 +99,26 @@ def eval_model(model: Pipeline, dummy: Pipeline, X_test: np.array,
 
     # Correlation between predicted increase and actual increase
     edge_over_dummy = np.corrcoef(
-        prediction.flatten() - dm_prediction.flatten(),
-        y_test.flatten() - dm_prediction.flatten())[0, 1]
+        prediction.flatten() - dm_prediction.flatten(), y_test.flatten() - dm_prediction.flatten()
+    )[0, 1]
 
     # Probability of being closer to response than dummy
     p_beat_dummy = np.count_nonzero(
-        (prediction.flatten() - y_test.flatten())**2 <
-        (dm_prediction.flatten() - y_test.flatten())**2) / len(
-            y_test.flatten())
+        (prediction.flatten() - y_test.flatten()) ** 2
+        < (dm_prediction.flatten() - y_test.flatten()) ** 2
+    ) / len(y_test.flatten())
 
     # Probability of predicting "in the right direction", i.e. up if up, down if down
     p_right_direction = np.count_nonzero(
-        (prediction.flatten() - dm_prediction.flatten()) *
-        (y_test.flatten() - dm_prediction.flatten()) > 0) / len(
-            y_test.flatten())
+        (prediction.flatten() - dm_prediction.flatten())
+        * (y_test.flatten() - dm_prediction.flatten())
+        > 0
+    ) / len(y_test.flatten())
 
     # Confusion matrix, where positive=increase
     increases = y_test.flatten() > dm_prediction.flatten()
     pred_increases = prediction.flatten() > dm_prediction.flatten()
-    tn, fp, fn, tp = map(int,
-                         confusion_matrix(increases, pred_increases).ravel())
+    tn, fp, fn, tp = map(int, confusion_matrix(increases, pred_increases).ravel())
 
     try:
         f1 = tp / (tp + (fp + fn) / 2)
@@ -154,9 +154,10 @@ def eval_model(model: Pipeline, dummy: Pipeline, X_test: np.array,
         "precision": precision,
         "recall": recall,
         "dor": dor,
-        "dummy_type": 'SmartDummy' if isinstance(dummy, SmartDummy) else
-        f'{dummy.__class__.__name__}({dummy.strategy=})',
-        "__version__": __version__
+        "dummy_type": "SmartDummy"
+        if isinstance(dummy, SmartDummy)
+        else f"{dummy.__class__.__name__}({dummy.strategy=})",
+        "__version__": __version__,
     }
 
     return eval_metrics
@@ -165,8 +166,7 @@ def eval_model(model: Pipeline, dummy: Pipeline, X_test: np.array,
 # Model generators
 
 
-def random_model(X_spec: DependencySpecType,
-                 y_spec: DependencySpecType) -> Pipeline:
+def random_model(X_spec: DependencySpecType, y_spec: DependencySpecType) -> Pipeline:
     """Generate a random model that fits with some X -> y DependencySpecs.
     This is intended to be continuously re-run hundreds of times,
     where some other process filters out the "good" models.
@@ -181,14 +181,11 @@ def random_model(X_spec: DependencySpecType,
     """
 
     if not isinstance(X_spec, DependencySpecType):
-        raise TypeError(
-            f"X_spec must be DependencySpecType, not {type(X_spec)}")
+        raise TypeError(f"X_spec must be DependencySpecType, not {type(X_spec)}")
     if not isinstance(y_spec, DependencySpecType):
-        raise TypeError(
-            f"y_spec must be DependencySpecType, not {type(X_spec)}")
+        raise TypeError(f"y_spec must be DependencySpecType, not {type(X_spec)}")
     if len(y_spec) != 1:
-        raise NotImplementedError(
-            "random_model() is unimplemented for y_spec of len != 1")
+        raise NotImplementedError("random_model() is unimplemented for y_spec of len != 1")
 
     p = len(X_spec)
     min_features = max(3, int(p * 0.05))
@@ -197,90 +194,101 @@ def random_model(X_spec: DependencySpecType,
     def get_estimator(with_fi: bool = False):
         choices = [
             ElasticNet(alpha=np.random.random(), l1_ratio=np.random.random()),
-            SGDRegressor(loss=np.random.choice([
-                'squared_loss', 'huber', 'epsilon_insensitive',
-                'squared_epsilon_insensitive'
-            ]),
-                         penalty=np.random.choice(['l2', 'l1', 'elasticnet']),
-                         alpha=np.random.lognormal(-4.0, 4.0)),
+            SGDRegressor(
+                loss=np.random.choice(
+                    ["squared_loss", "huber", "epsilon_insensitive", "squared_epsilon_insensitive"]
+                ),
+                penalty=np.random.choice(["l2", "l1", "elasticnet"]),
+                alpha=np.random.lognormal(-4.0, 4.0),
+            ),
             # GaussianProcessRegressor(),
             # PLSRegression()
         ]
         if not with_fi:
-            choices.extend([
-                KNeighborsRegressor(
-                    metric=np.random.choice(['euclidean', 'minkowski']),
-                    n_neighbors=np.random.randint(10, 100),
-                ),
-            ])
+            choices.extend(
+                [
+                    KNeighborsRegressor(
+                        metric=np.random.choice(["euclidean", "minkowski"]),
+                        n_neighbors=np.random.randint(10, 100),
+                    ),
+                ]
+            )
         return np.random.choice(choices)
 
     def get_preprocessor():
-        return np.random.choice(
-            [StandardScaler(),
-             Normalizer(),
-             QuantileTransformer(), None])
+        return np.random.choice([StandardScaler(), Normalizer(), QuantileTransformer(), None])
 
     def get_feature_selector(allow_recursive: bool):
         fast_choices = [
-            SelectKBest(score_func=np.random.choice(
-                [f_regression, mutual_info_regression]),
-                        k=np.random.randint(min_features, max_features + 1)),
-            SelectFromModel(estimator=get_estimator(with_fi=True),
-                            threshold=f"{1+np.random.random():.3f}*mean",
-                            max_features=max_features)
+            SelectKBest(
+                score_func=np.random.choice([f_regression, mutual_info_regression]),
+                k=np.random.randint(min_features, max_features + 1),
+            ),
+            SelectFromModel(
+                estimator=get_estimator(with_fi=True),
+                threshold=f"{1+np.random.random():.3f}*mean",
+                max_features=max_features,
+            ),
         ]
         recursive_choices = [
-            RFE(estimator=get_estimator(with_fi=True),
-                n_features_to_select=np.random.randint(min_features,
-                                                       max_features + 1),
-                step=.1),
+            RFE(
+                estimator=get_estimator(with_fi=True),
+                n_features_to_select=np.random.randint(min_features, max_features + 1),
+                step=0.1,
+            ),
             SequentialFeatureSelector(
                 estimator=get_estimator(with_fi=True),
-                n_features_to_select=np.random.randint(min_features,
-                                                       max_features + 1),
-                direction=np.random.choice(['forward', 'backward']),
-                n_jobs=N_PROCESSORS_FIT)
+                n_features_to_select=np.random.randint(min_features, max_features + 1),
+                direction=np.random.choice(["forward", "backward"]),
+                n_jobs=N_PROCESSORS_FIT,
+            ),
         ]
         return np.random.choice(
-            fast_choices +
-            recursive_choices if allow_recursive else fast_choices)
+            fast_choices + recursive_choices if allow_recursive else fast_choices
+        )
 
     def ensemble_estimator():
         n_estimators = np.random.randint(10, 200)
-        return np.random.choice([
-            BaggingRegressor(base_estimator=get_estimator(),
-                             n_estimators=n_estimators,
-                             n_jobs=N_PROCESSORS_FIT),
-            VotingRegressor(estimators=[(f"estimator_{i}", get_estimator())
-                                        for i in range(n_estimators)],
-                            n_jobs=N_PROCESSORS_FIT),
-            AdaBoostRegressor(base_estimator=get_estimator(),
-                              n_estimators=n_estimators),
-            RandomForestRegressor(
-                n_estimators=n_estimators,
-                min_samples_split=20,
-                min_samples_leaf=10,
-                n_jobs=N_PROCESSORS_FIT,
-            ),
-            ExtraTreesRegressor(
-                n_estimators=n_estimators,
-                min_samples_split=20,
-                min_samples_leaf=10,
-                n_jobs=N_PROCESSORS_FIT,
-            ),
-            HistGradientBoostingRegressor(loss=np.random.choice(
-                ['least_squares', 'least_absolute_deviation', 'poisson']))
-        ])
+        return np.random.choice(
+            [
+                BaggingRegressor(
+                    base_estimator=get_estimator(),
+                    n_estimators=n_estimators,
+                    n_jobs=N_PROCESSORS_FIT,
+                ),
+                VotingRegressor(
+                    estimators=[(f"estimator_{i}", get_estimator()) for i in range(n_estimators)],
+                    n_jobs=N_PROCESSORS_FIT,
+                ),
+                AdaBoostRegressor(base_estimator=get_estimator(), n_estimators=n_estimators),
+                RandomForestRegressor(
+                    n_estimators=n_estimators,
+                    min_samples_split=20,
+                    min_samples_leaf=10,
+                    n_jobs=N_PROCESSORS_FIT,
+                ),
+                ExtraTreesRegressor(
+                    n_estimators=n_estimators,
+                    min_samples_split=20,
+                    min_samples_leaf=10,
+                    n_jobs=N_PROCESSORS_FIT,
+                ),
+                HistGradientBoostingRegressor(
+                    loss=np.random.choice(["least_squares", "least_absolute_deviation", "poisson"])
+                ),
+            ]
+        )
 
-    return Pipeline([
-        ("feature_selection", get_feature_selector(allow_recursive=False)),
-        ("preprocessor", get_preprocessor()),
-        ("model", ensemble_estimator()),
-    ])
+    return Pipeline(
+        [
+            ("feature_selection", get_feature_selector(allow_recursive=False)),
+            ("preprocessor", get_preprocessor()),
+            ("model", ensemble_estimator()),
+        ]
+    )
 
 
-def dummy(strategy: str = 'median') -> Pipeline:
+def dummy(strategy: str = "median") -> Pipeline:
     """Generate a dummy model that fits with some X -> y DependencySpecs
 
     Args:
@@ -302,17 +310,14 @@ class SmartDummy(BaseEstimator):
 
     y_shape: Tuple
 
-    def __init__(self, X_spec: DependencySpecType,
-                 y_spec: DependencySpecType) -> None:
+    def __init__(self, X_spec: DependencySpecType, y_spec: DependencySpecType) -> None:
         """SmartDummy returns the col in X_spec that best matches y_spec"""
         super().__init__()
 
         if not isinstance(X_spec, DependencySpecType):
-            raise TypeError(
-                f"X_spec must be DependencySpecType, not {type(X_spec)}")
+            raise TypeError(f"X_spec must be DependencySpecType, not {type(X_spec)}")
         if not isinstance(y_spec, DependencySpecType):
-            raise TypeError(
-                f"y_spec must be DependencySpecType, not {type(y_spec)}")
+            raise TypeError(f"y_spec must be DependencySpecType, not {type(y_spec)}")
 
         self.index = self.get_index(X_spec, y_spec)
 
@@ -325,15 +330,15 @@ class SmartDummy(BaseEstimator):
 
         if len(y_spec) > 1:
             raise NotImplementedError(
-                f"y_spec of type with length {len(y_spec)} is not implemented")
+                f"y_spec of type with length {len(y_spec)} is not implemented"
+            )
         # It is impossible to instantiate any DependencySpecType with len < 1
 
         for i, dep in enumerate(X_spec):
             if dep == y_spec.dependencies[0]:
                 return i
 
-        raise ValueError(
-            "X_spec does not contain y_spec; Cannot initialize SmartDummy")
+        raise ValueError("X_spec does not contain y_spec; Cannot initialize SmartDummy")
 
     def fit(self, X, y) -> None:
         self.y_shape = y.shape
