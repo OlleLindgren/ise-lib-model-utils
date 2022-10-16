@@ -196,7 +196,7 @@ def random_model(X_spec: DependencySpecType, y_spec: DependencySpecType) -> Pipe
             ElasticNet(alpha=np.random.random(), l1_ratio=np.random.random()),
             SGDRegressor(
                 loss=np.random.choice(
-                    ["squared_loss", "huber", "epsilon_insensitive", "squared_epsilon_insensitive"]
+                    ["squared_error", "huber", "epsilon_insensitive", "squared_epsilon_insensitive"]
                 ),
                 penalty=np.random.choice(["l2", "l1", "elasticnet"]),
                 alpha=np.random.lognormal(-4.0, 4.0),
